@@ -23,6 +23,7 @@ build.ninja
 # Project-specific
 output.h
 ArgwcGrammar.awc
+builds/
 
 # VSCode
 .vscode/
