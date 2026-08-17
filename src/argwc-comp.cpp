@@ -2,6 +2,7 @@
 #include "../include/ArgueWithCpp/Parser.h"
 #include "../include/ArgueWithCpp/Tokenizer.h"
 #include <fstream>
+#include <iomanip>
 #include <iostream>
 #include <unordered_set>
 
@@ -74,10 +75,18 @@ void argwc_comp::write_objects() {
             write_byte(type_arg);
             write_byte(arg->required ? byte(1) : byte(0));
 
-            write_string(arg->name);
             write_byte(byte(0));
+            write_string(arg->name);
 
             write_byte(arg->block != nullptr ? byte(1) : byte(0));
+        } else if (auto* flg = dynamic_cast<Object_Flag*>(obj.get())) {
+            write_byte(type_flag);
+            write_byte(flg->required ? byte(1) : byte(0));
+
+            write_string(flg->flag_text);
+            write_string(flg->name);
+
+            write_byte(flg->block != nullptr ? byte(1) : byte(0));
         }
     }
 
@@ -89,21 +98,24 @@ void argwc_comp::write_objects() {
 
     outfile << "#ifndef ARGUE_WITH_CPP_COMPILER_143613\n"
                "#define ARGUE_WITH_CPP_COMPILER_143613\n"
-               "#include <vector>\n"
+               "#include <array>\n"
                "\n"
                "namespace argfile {\n"
-               "    std::vector<unsigned char> data = {";
+               "    std::array<unsigned char, ";
+    outfile << std::to_string(bytes.size());
+    outfile << "> data = {\n        ";
 
     for (int i = 0; i < bytes.size(); i++) {
         auto bt = bytes[i];
         int toint = bt;
-        std::cout << toint << "\n";
+        std::cout << std::left << std::setw(10) << toint << "    ";
+        std::cout << bt << "\n";
         outfile << std::to_string(toint);
         if (i != bytes.size() - 1) {
             outfile << ", ";
         }
     }
-    outfile << "};\n"
+    outfile << "\n    };\n"
                "}\n"
                "#endif";
 
