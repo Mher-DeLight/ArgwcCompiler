@@ -9,7 +9,7 @@ class argwc_comp {
 private:
     std::string config_file = "";
     std::string output_filepath = "";
-    std::vector<std::unique_ptr<Object>> objects;
+    std::unique_ptr<Object_Block> entry_point;
 
     void read_config();
     void write_objects();

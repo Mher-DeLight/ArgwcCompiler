@@ -33,7 +33,7 @@ void argwc_comp::read_config() {
     parser.load_tokens(tkn.get_tokens());
     parser.parse();
 
-    objects = std::move(parser.entry_point->children);
+    entry_point = std::move(parser.entry_point);
 }
 void argwc_comp::write_object(Object* obj, std::vector<uint8_t>& bytes) {
     using byte = uint8_t;
@@ -117,9 +117,7 @@ void argwc_comp::write_objects() {
     using byte = uint8_t;
     std::vector<byte> bytes;
 
-    for (auto& obj : objects) {
-        write_object(obj.get(), bytes);
-    }
+    write_object(entry_point.get(), bytes);
 
     std::ofstream outfile(output_filepath);
     if (!outfile) {
