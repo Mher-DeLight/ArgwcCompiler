@@ -167,7 +167,7 @@ std::unique_ptr<Object_Arg> Parser::parseArg() {
         eat(TokenType::VariableIdentifier, "expected variable identifier after 'arg' keyword")
             .lexeme;
 
-    bool is_required = true;
+    bool is_required = false;
     bool is_ordered = true;
 
     while (!check(TokenType::LBrace) && !check(TokenType::Semicolon)) {
