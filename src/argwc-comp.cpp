@@ -7,6 +7,13 @@
 #include <unordered_set>
 
 argwc_comp::argwc_comp(const std::string& infile, const std::string& outfile) {
+    if (!infile.ends_with(".awc") && !infile.ends_with(".argwc")) {
+        throw std::runtime_error("Please compile from ArgueWithCpp file (.awc or .argwc)");
+    }
+    if (!outfile.ends_with(".h") && !outfile.ends_with(".hpp")) {
+        throw std::runtime_error(
+            "Please compile the source code into a header file (extensions .h or .hpp)");
+    }
     output_filepath = outfile;
     std::fstream teststream(outfile);
     if (!teststream) { // test if it's there before compiling to not waste time
@@ -137,8 +144,6 @@ void argwc_comp::write_objects() {
     for (int i = 0; i < bytes.size(); i++) {
         auto bt = bytes[i];
         int toint = bt;
-        std::cout << std::left << std::setw(10) << toint << "    ";
-        std::cout << bt << "\n";
         outfile << std::to_string(toint);
         if (i != bytes.size() - 1) {
             outfile << ", ";
@@ -152,4 +157,5 @@ void argwc_comp::write_objects() {
         throw std::runtime_error("Failed to write to \"" + output_filepath + "\"");
     }
     outfile.close();
+    std::cout << "Compiled successfully into \"" << output_filepath << "\"" << std::endl;
 }
