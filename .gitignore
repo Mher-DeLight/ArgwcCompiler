@@ -21,3 +21,6 @@ out/
 build.ninja
 output.h
 ArgwcGrammar.awc
+
+# VSCode
+.vscode/

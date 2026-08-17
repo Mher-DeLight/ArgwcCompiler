@@ -1,0 +1,165 @@
+#pragma once
+#include <array>
+#include <memory>
+#include <ostream>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+enum class TokenType {
+    None,
+
+    VariableIdentifier,
+    StringLiteral,
+
+    KeywordArgfile,
+    KeywordRequired,
+    KeywordNotRequired,
+    KeywordOrdered,
+    KeywordUnordered,
+
+    ObjwordArg,
+    ObjwordFlag,
+    ObjwordBuzzword,
+    ObjwordVal,
+
+    Plus,
+    Minus,
+    Star,
+    Slash,
+
+    LParen,
+    RParen,
+    LBrace,
+    RBrace,
+
+    Comma,
+    Period,
+
+    Colon,
+    Semicolon,
+    Ampersand,
+    Exclamation,
+    Hashtag,
+    Money,
+
+    EndOfFile
+};
+class SourceLocation {
+public:
+    int row = -1;
+    int column = -1;
+
+    SourceLocation(int r, int c) : row(r), column(c) {}
+    SourceLocation() = default;
+};
+const std::unordered_map<std::string, TokenType> word_table{
+    {{"__END_OF_FILE__", TokenType::EndOfFile},
+
+     {"argfile", TokenType::KeywordArgfile},
+
+     {"arg", TokenType::ObjwordArg},
+     {"flag", TokenType::ObjwordFlag},
+     {"val", TokenType::ObjwordVal},
+     {"buzzword", TokenType::ObjwordBuzzword},
+
+     {"required", TokenType::KeywordRequired},
+     {"not_required", TokenType::KeywordNotRequired},
+     {"ordered", TokenType::KeywordOrdered},
+     {"unordered", TokenType::KeywordUnordered},
+
+     {"+", TokenType::Plus},
+     {"-", TokenType::Minus},
+     {"*", TokenType::Star},
+     {"/", TokenType::Slash},
+
+     {"(", TokenType::LParen},
+     {")", TokenType::RParen},
+     {"{", TokenType::LBrace},
+     {"}", TokenType::RBrace},
+     {"&", TokenType::Ampersand},
+     {":", TokenType::Colon},
+     {";", TokenType::Semicolon},
+     {"!", TokenType::Exclamation},
+     {",", TokenType::Comma},
+     {"#", TokenType::Hashtag},
+     {".", TokenType::Period},
+     {",", TokenType::Comma},
+     {"$", TokenType::Money}}};
+
+class Object {
+public:
+    virtual ~Object() = default;
+    virtual void print(std::ostream& stream) = 0;
+};
+class Object_Block : public Object {
+public:
+    std::vector<std::unique_ptr<Object>> children;
+    bool is_ordered = true;
+
+    Object_Block(std::vector<std::unique_ptr<Object>> children_, bool is_ordered_ = true)
+        : children(std::move(children_)), is_ordered(is_ordered_) {}
+    Object_Block() = default;
+    void print(std::ostream& stream) override {
+        stream << "ScopeBlock" << (is_ordered ? " ordered" : " unordered") << "\n";
+        for (auto& child : children) {
+            stream << "";
+            child->print(stream);
+        }
+        stream << "EndScope\n";
+    }
+};
+class Object_Flag : public Object {
+public:
+    std::string name;      // $varname
+    std::string flag_text; // --flag
+    bool required;
+    std::unique_ptr<Object_Block> block;
+
+    Object_Flag(const std::string& name_, const std::string& flag_text_, bool required_ = false,
+                std::unique_ptr<Object_Block> block_ = nullptr)
+        : name(name_), flag_text(flag_text_), required(required_), block(std::move(block_)) {}
+
+    void print(std::ostream& stream) override {
+        stream << "Flag: $" << name << " \"" << flag_text << "\"" << (required ? " *" : "") << '\n';
+
+        if (block)
+            block->print(stream);
+    }
+};
+class Object_Arg : public Object {
+public:
+    std::string name;
+    bool required;
+    std::unique_ptr<Object_Block> block;
+
+    Object_Arg(const std::string& name_, bool required_ = false,
+               std::unique_ptr<Object_Block> block_ = nullptr)
+        : name(name_), required(required_), block(std::move(block_)) {}
+
+    void print(std::ostream& stream) override {
+        stream << "Argument: $" << name << (required ? " *" : "") << '\n';
+
+        if (block)
+            block->print(stream);
+    }
+};
+class Object_Val : public Object {
+public:
+    std::string name;
+    std::string prefix_text;
+    bool required;
+    std::unique_ptr<Object_Block> block;
+
+    Object_Val(const std::string& name_, const std::string& flag_text_, bool required_ = false,
+               std::unique_ptr<Object_Block> block_ = nullptr)
+        : name(name_), prefix_text(flag_text_), required(required_), block(std::move(block_)) {}
+
+    void print(std::ostream& stream) override {
+        stream << "Value: $" << name << " \"" << prefix_text << "=\"" << (required ? " *" : "")
+               << '\n';
+
+        if (block)
+            block->print(stream);
+    }
+};
