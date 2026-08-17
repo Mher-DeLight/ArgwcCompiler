@@ -3,7 +3,7 @@ project(argwc-comp VERSION 0.1.0 LANGUAGES C CXX)
 option(BUILD_TESTS "Build argwc-comp tests." OFF)
 
 add_library(argwc-comp src/argwc-comp.cpp src/Parser.cpp src/Tokenizer.cpp)
-target_include_directories(argwc-comp PRIVATE 
+target_include_directories(argwc-comp PUBLIC 
     ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
