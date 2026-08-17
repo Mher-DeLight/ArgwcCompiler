@@ -13,6 +13,7 @@ private:
 
     void read_config();
     void write_objects();
+    void write_object(Object* obj, std::vector<uint8_t>& bytes);
 
 public:
     argwc_comp(const std::string& infile, const std::string& outfile);

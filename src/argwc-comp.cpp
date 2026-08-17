@@ -35,10 +35,73 @@ void argwc_comp::read_config() {
 
     objects = std::move(parser.entry_point->children);
 }
+void argwc_comp::write_object(Object* obj, std::vector<uint8_t>& bytes) {
+    using byte = uint8_t;
+    constexpr byte type_block = 1;
+    constexpr byte type_arg = 2;
+    constexpr byte type_flag = 3;
+    constexpr byte type_val = 4;
+
+    auto write_byte = [&bytes](byte info) { bytes.push_back(info); };
+    auto write_string = [&](const std::string& str) {
+        if (str.size() > UINT8_MAX) {
+            throw std::runtime_error("String too long to serialize");
+        }
+
+        write_byte(static_cast<byte>(str.size()));
+
+        bytes.insert(bytes.end(), reinterpret_cast<const byte*>(str.data()),
+                     reinterpret_cast<const byte*>(str.data()) + str.size());
+    };
+
+    if (auto* arg = dynamic_cast<Object_Arg*>(obj)) {
+        write_byte(type_arg);
+        write_byte(arg->required ? byte(1) : byte(0));
+
+        write_byte(byte(0));
+        write_string(arg->name);
+
+        write_byte(arg->block != nullptr ? byte(1) : byte(0));
+        if (arg->block)
+            write_object(arg->block.get(), bytes);
+    } else if (auto* flg = dynamic_cast<Object_Flag*>(obj)) {
+        write_byte(type_flag);
+        write_byte(flg->required ? byte(1) : byte(0));
+
+        write_string(flg->flag_text);
+        write_string(flg->name);
+
+        write_byte(flg->block != nullptr ? byte(1) : byte(0));
+        if (flg->block)
+            write_object(flg->block.get(), bytes);
+    } else if (auto* val = dynamic_cast<Object_Val*>(obj)) {
+        write_byte(type_val);
+        write_byte(val->required ? byte(1) : byte(0));
+
+        write_string(val->prefix_text);
+        write_string(val->name);
+
+        write_byte(val->block != nullptr ? byte(1) : byte(0));
+        if (val->block)
+            write_object(val->block.get(), bytes);
+    } else if (auto* blck = dynamic_cast<Object_Block*>(obj)) {
+        write_byte(type_block);
+        write_byte(byte(0));
+
+        write_byte(byte(0));
+        write_byte(byte(0));
+
+        byte info = blck->is_ordered ? byte(1 << 1) : byte(0 << 1);
+        write_byte(info);
+        for (auto& child : blck->children) {
+            write_object(child.get(), bytes);
+        }
+    }
+}
 void argwc_comp::write_objects() {
     /*
     ==================================== FORMAT ===================================
-    | Object type (0->invalid, 1->argfile, 2->arg, 3->flag, 4->val)       1 byte  |
+    | Object type (0->invalid, 1->block, 2->arg, 3->flag, 4->val)         1 byte  |
     | Info (hgfedcba, a->is required, b->is ordered)                      1 byte  |
     |                                                                             |
     | Name size                                                           1 byte  |
@@ -52,50 +115,10 @@ void argwc_comp::write_objects() {
     */
 
     using byte = uint8_t;
-    constexpr byte type_argfile = 1;
-    constexpr byte type_arg = 2;
-    constexpr byte type_flag = 3;
-    constexpr byte type_val = 4;
-
     std::vector<byte> bytes;
-    auto write_byte = [&bytes](byte info) { bytes.push_back(info); };
-    auto write_string = [&](const std::string& str) {
-        if (str.size() > UINT8_MAX) {
-            throw std::runtime_error("String too long to serialize");
-        }
-
-        write_byte(static_cast<byte>(str.size()));
-
-        bytes.insert(bytes.end(), reinterpret_cast<const byte*>(str.data()),
-                     reinterpret_cast<const byte*>(str.data()) + str.size());
-    };
 
     for (auto& obj : objects) {
-        if (auto* arg = dynamic_cast<Object_Arg*>(obj.get())) {
-            write_byte(type_arg);
-            write_byte(arg->required ? byte(1) : byte(0));
-
-            write_byte(byte(0));
-            write_string(arg->name);
-
-            write_byte(arg->block != nullptr ? byte(1) : byte(0));
-        } else if (auto* flg = dynamic_cast<Object_Flag*>(obj.get())) {
-            write_byte(type_flag);
-            write_byte(flg->required ? byte(1) : byte(0));
-
-            write_string(flg->flag_text);
-            write_string(flg->name);
-
-            write_byte(flg->block != nullptr ? byte(1) : byte(0));
-        } else if (auto* val = dynamic_cast<Object_Val*>(obj.get())) {
-            write_byte(type_val);
-            write_byte(val->required ? byte(1) : byte(0));
-
-            write_string(val->prefix_text);
-            write_string(val->name);
-
-            write_byte(val->block != nullptr ? byte(1) : byte(0));
-        }
+        write_object(obj.get(), bytes);
     }
 
     std::ofstream outfile(output_filepath);
