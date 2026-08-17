@@ -87,6 +87,14 @@ void argwc_comp::write_objects() {
             write_string(flg->name);
 
             write_byte(flg->block != nullptr ? byte(1) : byte(0));
+        } else if (auto* val = dynamic_cast<Object_Val*>(obj.get())) {
+            write_byte(type_val);
+            write_byte(val->required ? byte(1) : byte(0));
+
+            write_string(val->prefix_text);
+            write_string(val->name);
+
+            write_byte(val->block != nullptr ? byte(1) : byte(0));
         }
     }
 
