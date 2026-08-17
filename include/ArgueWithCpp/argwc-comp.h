@@ -8,10 +8,12 @@
 class argwc_comp {
 private:
     std::string config_file = "";
+    std::string output_filepath = "";
     std::vector<std::unique_ptr<Object>> objects;
 
     void read_config();
+    void write_objects();
 
 public:
-    argwc_comp(int argc_, char** argv_, const std::string& filepath);
+    argwc_comp(const std::string& infile, const std::string& outfile);
 };
