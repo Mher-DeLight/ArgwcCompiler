@@ -19,6 +19,8 @@ out/
 .ninja_deps
 .ninja_log
 build.ninja
+
+# Project-specific
 output.h
 ArgwcGrammar.awc
 

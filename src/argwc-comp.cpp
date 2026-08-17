@@ -81,14 +81,31 @@ void argwc_comp::write_objects() {
         }
     }
 
-    std::ofstream outfile(output_filepath, std::ios::binary);
+    std::ofstream outfile(output_filepath);
     if (!outfile) {
         throw std::runtime_error("Couldn't open output file \"" + output_filepath +
                                  "\" after compilation.");
     }
 
-    outfile.write(reinterpret_cast<const char*>(bytes.data()),
-                  static_cast<std::streamsize>(bytes.size()));
+    outfile << "#ifndef ARGUE_WITH_CPP_COMPILER_143613\n"
+               "#define ARGUE_WITH_CPP_COMPILER_143613\n"
+               "#include <vector>\n"
+               "\n"
+               "namespace argfile {\n"
+               "    std::vector<unsigned char> data = {";
+
+    for (int i = 0; i < bytes.size(); i++) {
+        auto bt = bytes[i];
+        int toint = bt;
+        std::cout << toint << "\n";
+        outfile << std::to_string(toint);
+        if (i != bytes.size() - 1) {
+            outfile << ", ";
+        }
+    }
+    outfile << "};\n"
+               "}\n"
+               "#endif";
 
     if (!outfile) {
         throw std::runtime_error("Failed to write to \"" + output_filepath + "\"");
