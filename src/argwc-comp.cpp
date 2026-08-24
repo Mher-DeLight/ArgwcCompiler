@@ -93,13 +93,12 @@ void argwc_comp::write_object(Object* obj, std::vector<uint8_t>& bytes) {
             write_object(val->block.get(), bytes);
     } else if (auto* blck = dynamic_cast<Object_Block*>(obj)) {
         write_byte(type_block);
-        write_byte(byte(0));
+        write_byte(blck->is_ordered ? byte(2) : byte(0));
 
         write_byte(byte(0));
         write_byte(byte(0));
 
-        byte info = blck->is_ordered ? byte(1 << 1) : byte(0 << 1);
-        write_byte(info);
+        write_byte(byte(blck->children.size()));
         for (auto& child : blck->children) {
             write_object(child.get(), bytes);
         }
